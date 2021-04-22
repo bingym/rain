@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH Remote Commands
+        uses: appleboy/ssh-action@v0.1.4
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: cd repo/zhuhai && git pull -r && docker-compose up --build -d && docker rmi $(docker images -f "dangling=true" -q) && docker ps
+      - name: Success Bark notify
+        uses: shink/bark-action@v1
+        with:
+          key: ${{ secrets.BARK_KEY }}
+          title: 部署通知
+          body: ${{ github.repository }}[${{ github.sha }}]部署成功
+        if: ${{ success() }}
+      - name: Failed Bark notify
+        uses: shink/bark-action@v1
+        with:
+          key: ${{ secrets.BARK_KEY }}
+          title: 部署通知
+          body: ${{ github.repository }}[${{ github.sha }}]部署失败
+        if: ${{ failure() }}

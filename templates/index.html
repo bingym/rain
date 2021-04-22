@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #393733;
+        }
+
+        #ctl {
+            display: flex;
+            justify-content: center;
+            margin-top: 8%;
+        }
+
+        #ctl i {
+            font-size: 10rem;
+            color: #f8f4ed;
+            text-shadow: 0 0 0.8rem #f8f4ed;
+        }
+    </style>
+</head>
+<body>
+<audio
+        src="https://rainymood.com/audio1112/0.m4a" preload="auto" loop id="au"
+>
+    Your browser does not support the audio tag.
+</audio>
+<div id="ctl"><i class="fa fa-play" aria-hidden="true"></i></div>
+<script>
+    // function _floor(num) {
+    //     return Math.floor(num * 100) / 100
+    // }
+    // function pause(sound) {
+    //     const fadePoint = _floor(sound.currentTime + 0.3)
+    //     const fadeAudio = setInterval(function () {
+    //         const currentTime = _floor(sound.currentTime)
+    //         const volume = _floor(sound.volume)
+    //         if ((volume >= 0) && currentTime > fadePoint) {
+    //             sound.volume = volume - 0.1
+    //         }
+    //         if (sound.volume <= 0) {
+    //             clearInterval(fadeAudio)
+    //             sound.pause()
+    //         }
+    //     }, 100);
+    // }
+    const au = document.getElementById('au')
+    const ctl = document.getElementById('ctl')
+    ctl.addEventListener('click', function () {
+        const paused = au.paused
+        if (paused) {
+            au.play()
+            ctl.innerHTML = '<i class="fa fa-pause" aria-hidden="true"></i>'
+        } else {
+            // pause(au)
+            au.pause()
+            ctl.innerHTML = '<i class="fa fa-play" aria-hidden="true"></i>'
+        }
+    })
+</script>
+</body>
+</html>

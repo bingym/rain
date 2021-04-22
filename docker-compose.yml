@@ -1,0 +1,10 @@
+version: '3'
+services:
+  webapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - "9992"
+    ports:
+      - "9992:9992"
