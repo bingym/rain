@@ -3,21 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/aplayer/1.9.1/APlayer.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-        }
-
         body {
             background: #393733;
         }
 
-        #ctl {
-            display: flex;
-            justify-content: center;
-            margin-top: 8%;
+        #rain-play {
+            margin-top: 20%;
+        }
+
+        #music-play {
+            margin-top: 8rem;
         }
 
         #ctl i {
@@ -25,43 +24,53 @@
             color: #f8f4ed;
             text-shadow: 0 0 0.8rem #f8f4ed;
         }
+
     </style>
 </head>
 <body>
-<audio
-        src="https://media.threestories.cn/rain001.m4a" preload="auto" loop id="au"
->
-    Your browser does not support the audio tag.
-</audio>
-<div id="ctl"><i class="fa fa-play" aria-hidden="true"></i></div>
+<div class="container">
+    <audio
+            src="https://media.threestories.cn/rain001.m4a" preload="auto" loop id="au"
+    >
+        Your browser does not support the audio tag.
+    </audio>
+    <div class="row" id="rain-play">
+        <div class="col-12 mx-auto">
+            <div id="ctl" class="d-flex justify-content-center"><i class="fa fa-play" aria-hidden="true"></i></div>
+        </div>
+    </div>
+    <div class="row" id="music-play">
+        <div class="col-sm-12 col-md-8 col-lg-8 mx-auto">
+            <div id="player"></div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.staticfile.org/aplayer/1.9.1/APlayer.min.js"></script>
 <script>
-    // function _floor(num) {
-    //     return Math.floor(num * 100) / 100
-    // }
-    // function pause(sound) {
-    //     const fadePoint = _floor(sound.currentTime + 0.3)
-    //     const fadeAudio = setInterval(function () {
-    //         const currentTime = _floor(sound.currentTime)
-    //         const volume = _floor(sound.volume)
-    //         if ((volume >= 0) && currentTime > fadePoint) {
-    //             sound.volume = volume - 0.1
-    //         }
-    //         if (sound.volume <= 0) {
-    //             clearInterval(fadeAudio)
-    //             sound.pause()
-    //         }
-    //     }, 100);
-    // }
+    const ap = new APlayer({
+        container: document.getElementById('player'),
+        listFolded: true,
+        preload: 'auto',
+        audio: [
+            {name: '下雨', url: 'https://media.threestories.cn/下雨.m4a', artist: '李志'},
+            {name: '你离开了南京从此没有人和我说话', url: 'https://media.threestories.cn/你离开了南京从此没有人和我说话.m4a', artist: '李志'},
+            {name: '关于郑州的记忆', url: 'https://media.threestories.cn/关于郑州的记忆.m4a', artist: '李志'},
+            {name: '天空之城', url: 'https://media.threestories.cn/天空之城.m4a', artist: '李志'},
+            {name: '梵高先生', url: 'https://media.threestories.cn/梵高先生.m4a', artist: '李志'},
+            {name: '这个世界会好吗', url: 'https://media.threestories.cn/这个世界会好吗.m4a', artist: '李志'},
+        ]
+    });
     const au = document.getElementById('au')
     const ctl = document.getElementById('ctl')
     ctl.addEventListener('click', function () {
         const paused = au.paused
         if (paused) {
             au.play()
+            ap.play()
             ctl.innerHTML = '<i class="fa fa-pause" aria-hidden="true"></i>'
         } else {
-            // pause(au)
             au.pause()
+            ap.pause()
             ctl.innerHTML = '<i class="fa fa-play" aria-hidden="true"></i>'
         }
     })
