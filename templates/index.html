@@ -2,46 +2,55 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Rain</title>
     <link rel="stylesheet" href="https://cdn.staticfile.org/aplayer/1.9.1/APlayer.min.css">
     <style>
-        body {
-            background: #393733;
+        * {
+            margin: 0;
+            padding: 0;
         }
 
-        #rain-play {
-            margin-top: 20%;
+        html {
+            height: 100%;
+        }
+
+        body {
+            min-height: 100%;
+            background: #393733;
+            height: 100%;
+            position: relative;
         }
 
         #music-play {
-            margin-top: 8rem;
+            display: none;
         }
 
-        #ctl i {
-            font-size: 10rem;
+        #ctl {
+            font-size: 6rem;
             color: #f8f4ed;
             text-shadow: 0 0 0.8rem #f8f4ed;
+        }
+
+        #rain-play {
+            bottom: 12%;
+            left: 5%;
+            position: absolute;
+            cursor: pointer;
         }
 
     </style>
 </head>
 <body>
-<div class="container">
-    <audio
-            src="https://media.threestories.cn/rain001.m4a" preload="auto" loop id="au"
-    >
-        Your browser does not support the audio tag.
-    </audio>
-    <div class="row">
-        <div class="col-12 mx-auto" id="rain-play">
-            <div id="ctl" class="d-flex justify-content-center"><i class="fa fa-play" aria-hidden="true"></i></div>
-        </div>
-        <div class="col-12 mx-auto" id="music-play">
-            <div id="player"></div>
-        </div>
-    </div>
+<audio
+        src="https://media.threestories.cn/rain001.m4a" preload="auto" loop id="au"
+>
+    Your browser does not support the audio tag.
+</audio>
+<div id="rain-play">
+    <div id="ctl">播放</div>
+</div>
+<div id="music-play">
+    <div id="player"></div>
 </div>
 <script src="https://cdn.staticfile.org/aplayer/1.9.1/APlayer.min.js"></script>
 <script>
@@ -49,7 +58,8 @@
         container: document.getElementById('player'),
         listFolded: true,
         preload: 'auto',
-        volume: 0.6,
+        volume: 0.4,
+        mini: true,
         audio: [
             {name: '下雨', url: 'https://media.threestories.cn/下雨.m4a', artist: '李志'},
             {name: '你离开了南京从此没有人和我说话', url: 'https://media.threestories.cn/你离开了南京从此没有人和我说话.m4a', artist: '李志'},
@@ -66,11 +76,11 @@
         if (paused) {
             au.play()
             ap.play()
-            ctl.innerHTML = '<i class="fa fa-pause" aria-hidden="true"></i>'
+            ctl.innerHTML = '暂停'
         } else {
             au.pause()
             ap.pause()
-            ctl.innerHTML = '<i class="fa fa-play" aria-hidden="true"></i>'
+            ctl.innerHTML = '播放'
         }
     })
 </script>
