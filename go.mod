@@ -1,3 +1,3 @@
-module zhuhai
+module github.com/bingym/rain
 
-go 1.15
+go 1.17
