@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to ACR
+        uses: aliyun/acr-login@v1
+        with:
+          login-server: registry.cn-hangzhou.aliyuncs.com
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - name: Build and push image
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t registry.cn-hangzhou.aliyuncs.com/bingym/rain_amd64:$IMAGE_TAG .
+          docker push registry.cn-hangzhou.aliyuncs.com/bingym/rain_amd64:$IMAGE_TAG .
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success Bark notify
+        uses: shink/bark-action@v1
+        with:
+          key: ${{ secrets.BARK_KEY }}
+          title: 部署通知
+          body: ${{ github.repository }}[${{ github.sha }}] latest image push success
+        if: ${{ success() }}
+      - name: Failed Bark notify
+        uses: shink/bark-action@v1
+        with:
+          key: ${{ secrets.BARK_KEY }}
+          title: 部署通知
+          body: ${{ github.repository }}[${{ github.sha }}] latest image push success
+        if: ${{ failure() }}
