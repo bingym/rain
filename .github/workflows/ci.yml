@@ -5,7 +5,7 @@ on:
     branches: [master]
 
 jobs:
-  prepare:
+  build_and_push:
     runs-on: ubuntu-latest
     steps:
       - name: Login to ACR
@@ -14,12 +14,16 @@ jobs:
           login-server: registry.cn-hangzhou.aliyuncs.com
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
-      - name: Build and push image
+      - name: Build image
         env:
           IMAGE_TAG: ${{ github.sha }}
-        run: |
+        run:
           docker build -t registry.cn-hangzhou.aliyuncs.com/bingym/rain_amd64:$IMAGE_TAG .
-          docker push registry.cn-hangzhou.aliyuncs.com/bingym/rain_amd64:$IMAGE_TAG .
+      - name: Push image
+        env:
+          IMAGE_TAB: ${{ github.sha }}
+        run:
+          docker push registry.cn-hangzhou.aliyuncs.com/bingym/rain_amd64:$IMAGE_TAG
   notify:
     runs-on: ubuntu-latest
     steps:
