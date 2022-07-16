@@ -1,11 +1,9 @@
-name: CI
+name: build-and-push-image
 
-on:
-  push:
-    branches: [master]
+on: [push, pull_request]
 
 jobs:
-  build_and_push:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Login to ACR
@@ -17,13 +15,11 @@ jobs:
       - name: Build image
         env:
           IMAGE_TAG: ${{ github.sha }}
-        run:
-          docker build -t registry.cn-hangzhou.aliyuncs.com/bingym/rain_amd64:$IMAGE_TAG .
+        run: docker build -t registry.cn-hangzhou.aliyuncs.com/bingym/rain_amd64:${IMAGE_TAG::7} .
       - name: Push image
         env:
           IMAGE_TAB: ${{ github.sha }}
-        run:
-          docker push registry.cn-hangzhou.aliyuncs.com/bingym/rain_amd64:$IMAGE_TAG
+        run: docker push registry.cn-hangzhou.aliyuncs.com/bingym/rain_amd64:${IMAGE_TAG::7}
   notify:
     runs-on: ubuntu-latest
     steps:
