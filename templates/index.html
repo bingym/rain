@@ -42,12 +42,12 @@
 </head>
 <body>
 <audio
-        src="https://media.threestories.cn/rain001.m4a" preload="auto" loop id="au"
+        src="https://drive-cdn.1994.link/rain-project/rain001.m4a" preload="auto" loop id="au"
 >
     Your browser does not support the audio tag.
 </audio>
 <div id="rain-play">
-    <div id="ctl">播放</div>
+    <div id="ctl">PLAY</div>
 </div>
 <div id="music-play">
     <div id="player"></div>
@@ -61,12 +61,12 @@
         volume: 0.4,
         mini: true,
         audio: [
-            {name: '下雨', url: 'https://media.threestories.cn/下雨.m4a', artist: '李志'},
-            {name: '你离开了南京从此没有人和我说话', url: 'https://media.threestories.cn/你离开了南京从此没有人和我说话.m4a', artist: '李志'},
-            {name: '关于郑州的记忆', url: 'https://media.threestories.cn/关于郑州的记忆.m4a', artist: '李志'},
-            {name: '天空之城', url: 'https://media.threestories.cn/天空之城.m4a', artist: '李志'},
-            {name: '梵高先生', url: 'https://media.threestories.cn/梵高先生.m4a', artist: '李志'},
-            {name: '这个世界会好吗', url: 'https://media.threestories.cn/这个世界会好吗.m4a', artist: '李志'},
+            {name: '下雨', url: 'https://drive-cdn.1994.link/rain-project/下雨.m4a', artist: '李志'},
+            {name: '你离开了南京从此没有人和我说话', url: 'https://drive-cdn.1994.link/rain-project/你离开了南京从此没有人和我说话.m4a', artist: '李志'},
+            {name: '关于郑州的记忆', url: 'https://drive-cdn.1994.link/rain-project/关于郑州的记忆.m4a', artist: '李志'},
+            {name: '天空之城', url: 'https://drive-cdn.1994.link/rain-project/天空之城.m4a', artist: '李志'},
+            {name: '梵高先生', url: 'https://drive-cdn.1994.link/rain-project/梵高先生.m4a', artist: '李志'},
+            {name: '这个世界会好吗', url: 'https://drive-cdn.1994.link/rain-project/这个世界会好吗.m4a', artist: '李志'},
         ]
     });
     const au = document.getElementById('au')
@@ -76,11 +76,11 @@
         if (paused) {
             au.play()
             ap.play()
-            ctl.innerHTML = '暂停'
+            ctl.innerHTML = 'PAUSE'
         } else {
             au.pause()
             ap.pause()
-            ctl.innerHTML = '播放'
+            ctl.innerHTML = 'PLAY'
         }
     })
 </script>
