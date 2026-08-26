@@ -1,8 +1,0 @@
-version: '3'
-services:
-  webapp:
-    image: registry.cn-hangzhou.aliyuncs.com/bingym/rain_amd64:latest
-    restart: always
-    network_mode: host
-    environment:
-      APP_MODE: prod
