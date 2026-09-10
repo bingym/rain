@@ -1,0 +1,18 @@
+{
+  "name": "Rain — 雨声 × 李志",
+  "short_name": "Rain",
+  "description": "雨声混合李志，专注、平静、流动。适合编程、阅读与深夜。",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f0e",
+  "theme_color": "#0b0f0e",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

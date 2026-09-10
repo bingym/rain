@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0b0f0e"/>
+  <rect x="56" y="56" width="400" height="400" rx="80" fill="none" stroke="#d8c9a3" stroke-opacity=".25" stroke-width="2"/>
+  <text x="256" y="278" font-family="Songti SC, Noto Serif SC, serif" font-size="150" fill="#f2ece1" text-anchor="middle">雨</text>
+  <g stroke="#9fb8ad" stroke-width="10" stroke-linecap="round" opacity=".85">
+    <line x1="168" y1="340" x2="150" y2="392"/>
+    <line x1="232" y1="340" x2="214" y2="392"/>
+    <line x1="296" y1="340" x2="278" y2="392"/>
+    <line x1="360" y1="340" x2="342" y2="392"/>
+  </g>
+</svg>
