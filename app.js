@@ -17,9 +17,8 @@ const QUOTES = [
 ];
 
 const $ = (id) => document.getElementById(id);
-const masterBtn = $('master-toggle');
-const iconPlay = $('icon-play');
-const iconPause = $('icon-pause');
+const playBtn = $('play-btn');
+const pauseBtn = $('pause-btn');
 const stateLabel = $('state-label');
 const nowPlaying = $('now-playing');
 const npText = $('np-text');
@@ -28,7 +27,7 @@ const rainVol = $('rain-volume'), rainVolVal = $('rain-volume-val');
 const musicVol = $('music-volume'), musicVolVal = $('music-volume-val');
 const intensity = $('rain-intensity'), intensityVal = $('rain-intensity-val');
 const rainMuteBtn = $('rain-mute');
-const musicToggleBtn = $('music-toggle');
+const musicMuteBtn = $('music-mute');
 const themeBtn = $('theme-btn');
 const iconSun = $('icon-sun');
 const iconMoon = $('icon-moon');
@@ -44,7 +43,7 @@ function setTheme(t, persist = true) {
   iconSun.hidden = !light; // 浅色显示太阳，深色显示月亮
   iconMoon.hidden = light;
   if (themeColorMeta) themeColorMeta.content = light ? '#e9e6dc' : '#0b0f0e';
-  rainDropRGB = light ? '80,105,98' : '200,220,214';
+  rainDropRGB = light ? '48,78,72' : '200,220,214';
 }
 
 // 主题初始化：内联脚本已按 localStorage / 系统偏好设好，这里只做同步
@@ -86,6 +85,7 @@ function loadTrack(i, autoplay) {
 }
 
 function renderTracks() {
+  if (!trackListEl) return;
   trackListEl.innerHTML = '';
   TRACKS.forEach((t, i) => {
     const li = document.createElement('li');
@@ -110,10 +110,12 @@ function updateNowPlaying() {
 }
 
 function updateMasterUI() {
-  iconPlay.hidden = isPlaying;
-  iconPause.hidden = !isPlaying;
-  masterBtn.classList.toggle('playing', isPlaying);
-  stateLabel.textContent = isPlaying ? 'RAINING — 正在下雨' : 'TAP TO BEGIN';
+  // 互斥显示：播放中只显示 pause，暂停只显示 play
+  if (playBtn) playBtn.hidden = isPlaying;
+  if (pauseBtn) pauseBtn.hidden = !isPlaying;
+  if (playBtn) playBtn.setAttribute('aria-pressed', String(!isPlaying));
+  if (pauseBtn) pauseBtn.setAttribute('aria-pressed', String(isPlaying));
+  stateLabel.textContent = isPlaying ? 'RAINING — 正在下雨' : 'PAUSED — 已暂停';
   renderTracks();
   updateNowPlaying();
 }
@@ -133,6 +135,7 @@ async function setPlaying(on) {
 }
 
 function syncRain() {
+  if (!rainMuteBtn) return;
   rainMuteBtn.textContent = rainOn ? 'ON' : 'OFF';
   rainMuteBtn.classList.toggle('is-on', rainOn);
   rainMuteBtn.setAttribute('aria-pressed', String(rainOn));
@@ -142,29 +145,35 @@ function syncRain() {
   else rainAudio.pause();
 }
 function syncMusic() {
-  musicToggleBtn.textContent = musicOn ? '⏸' : '▶';
-  localStorage.setItem('rain.musicOn', String(musicOn));
-  if (!isPlaying) return;
-  if (musicOn) musicAudio.play().catch(() => {});
+  const on = musicOn;
+  if (musicMuteBtn) {
+    musicMuteBtn.textContent = on ? 'ON' : 'OFF';
+    musicMuteBtn.classList.toggle('is-on', on);
+    musicMuteBtn.setAttribute('aria-pressed', String(on));
+  }
+  localStorage.setItem('rain.musicOn', String(on));
+  if (!isPlaying) { updateNowPlaying(); renderTracks(); return; }
+  if (on) musicAudio.play().catch(() => {});
   else musicAudio.pause();
   updateNowPlaying(); renderTracks();
 }
 
-masterBtn.addEventListener('click', () => setPlaying(!isPlaying));
-rainMuteBtn.addEventListener('click', () => { rainOn = !rainOn; syncRain(); });
-musicToggleBtn.addEventListener('click', () => { musicOn = !musicOn; syncMusic(); });
-$('prev-btn').addEventListener('click', () => loadTrack(trackIndex - 1, isPlaying && musicOn));
-$('next-btn').addEventListener('click', () => loadTrack(trackIndex + 1, isPlaying && musicOn));
+playBtn?.addEventListener('click', () => setPlaying(true));
+pauseBtn?.addEventListener('click', () => setPlaying(false));
+rainMuteBtn?.addEventListener('click', () => { rainOn = !rainOn; syncRain(); });
+musicMuteBtn?.addEventListener('click', () => { musicOn = !musicOn; syncMusic(); });
+$('prev-btn')?.addEventListener('click', () => loadTrack(trackIndex - 1, isPlaying && musicOn));
+$('next-btn')?.addEventListener('click', () => loadTrack(trackIndex + 1, isPlaying && musicOn));
 musicAudio.addEventListener('ended', () => loadTrack(trackIndex + 1, true));
 
-rainVol.addEventListener('input', () => {
+rainVol?.addEventListener('input', () => {
   rainAudio.volume = rainVol.value / 100;
-  rainVolVal.textContent = rainVol.value;
+  if (rainVolVal) rainVolVal.textContent = rainVol.value;
   localStorage.setItem('rain.rainVol', String(rainAudio.volume));
 });
-musicVol.addEventListener('input', () => {
+musicVol?.addEventListener('input', () => {
   musicAudio.volume = musicVol.value / 100;
-  musicVolVal.textContent = musicVol.value;
+  if (musicVolVal) musicVolVal.textContent = musicVol.value;
   localStorage.setItem('rain.musicVol', String(musicAudio.volume));
 });
 
@@ -190,14 +199,6 @@ function updateMediaSession() {
     navigator.mediaSession.setActionHandler('nexttrack', () => loadTrack(trackIndex + 1, true));
   } catch {}
 }
-
-// clock
-const clockEl = $('clock');
-setInterval(() => {
-  const d = new Date();
-  clockEl.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}, 10000);
-(() => { const d = new Date(); clockEl.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; })();
 
 // quote rotation
 const quoteEl = $('quote');
@@ -232,14 +233,14 @@ function seed() {
     y: Math.random() * H,
     len: (8 + Math.random() * 18) * devicePixelRatio,
     speed: (6 + Math.random() * 10) * devicePixelRatio,
-    opacity: 0.08 + Math.random() * 0.28,
+    opacity: 0.12 + Math.random() * 0.34,
   }));
 }
 seed();
 addEventListener('resize', seed);
 
-intensity.addEventListener('input', () => {
-  intensityVal.textContent = intensity.value;
+intensity?.addEventListener('input', () => {
+  if (intensityVal) intensityVal.textContent = intensity.value;
   intensityValNum = Number(intensity.value);
 });
 
@@ -247,17 +248,23 @@ function frame() {
   ctx.clearRect(0, 0, W, H);
   const density = intensityValNum / 100; // 0.01..1
   const active = Math.floor(drops.length * (0.15 + density * 0.85));
-  ctx.lineWidth = devicePixelRatio;
+  const isLight = document.documentElement.dataset.theme === 'light';
+  // 雨势越大线越粗、越长、越不透明；light 模式额外加对比度
   ctx.lineCap = 'round';
+  ctx.lineWidth = devicePixelRatio * (0.9 + density * 1.5);
   const wind = Math.sin(Date.now() / 4000) * devicePixelRatio * 0.6;
   for (let i = 0; i < active; i++) {
     const d = drops[i];
-    ctx.strokeStyle = `rgba(${rainDropRGB},${d.opacity * (0.4 + density * 0.8)})`;
+    const len = d.len * (0.85 + density * 0.7);
+    let alpha = d.opacity * (0.5 + density * 1.2);
+    if (isLight) alpha = alpha * 1.35 + 0.08 + density * 0.18;
+    alpha = Math.min(1, alpha);
+    ctx.strokeStyle = `rgba(${rainDropRGB},${alpha.toFixed(3)})`;
     ctx.beginPath();
     ctx.moveTo(d.x, d.y);
-    ctx.lineTo(d.x + wind, d.y + d.len);
+    ctx.lineTo(d.x + wind, d.y + len);
     ctx.stroke();
-    d.y += d.speed * (0.5 + density);
+    d.y += d.speed * (0.5 + density * 1.1);
     d.x += wind * 0.4;
     if (d.y > H) { d.y = -20; d.x = Math.random() * W; }
   }
