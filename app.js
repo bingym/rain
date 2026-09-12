@@ -6,7 +6,12 @@ const TRACKS = [
   { name: '梵高先生', artist: '李志', url: 'https://drive-cdn.1994.link/rain-project/梵高先生.m4a' },
   { name: '这个世界会好吗', artist: '李志', url: 'https://drive-cdn.1994.link/rain-project/这个世界会好吗.m4a' },
 ];
-const RAIN_URL = 'https://drive-cdn.1994.link/rain-project/rain001.m4a';
+const RAIN_URLS = [
+  'https://drive-cdn.1994.link/rain-project/rain001.m4a',
+  'https://drive-cdn.1994.link/rain-project/da-wa-wa-i--115693.mp3',
+  'https://drive-cdn.1994.link/rain-project/gingerleegalaxy_1-rain-drops-on-window-green-noise-mix-231100.mp3',
+  'https://drive-cdn.1994.link/rain-project/gingerleegalaxy_1-raining-on-multiple-surfaces-mix-231892.mp3',
+];
 const QUOTES = [
   '“ 你离开了南京，从此没有人和我说话 ”',
   '“ 梵高先生，你的向日葵正在燃烧 ”',
@@ -55,9 +60,22 @@ themeBtn.addEventListener('click', () => {
   setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
 });
 
-const rainAudio = new Audio(RAIN_URL);
+const rainAudio = new Audio(RAIN_URLS[0]);
 rainAudio.loop = true;
 rainAudio.preload = 'auto';
+let rainIdx = 0;
+// 预加载其余雨声，切换时无缝
+RAIN_URLS.slice(1).forEach((u) => { const a = new Audio(); a.preload = 'auto'; a.src = u; });
+// 每阵雨随机换一种雨声（不连播同一首），在音量为 0 时切换，由渐入盖住切歌点
+function pickRainSound() {
+  if (RAIN_URLS.length < 2) return;
+  let n = rainIdx;
+  while (n === rainIdx) n = Math.floor(Math.random() * RAIN_URLS.length);
+  rainIdx = n;
+  rainAudio.src = RAIN_URLS[n];
+  rainAudio.loop = true;
+  if (isPlaying && rainOn) rainAudio.play().catch(() => {});
+}
 const musicAudio = new Audio();
 musicAudio.preload = 'auto';
 
@@ -279,6 +297,7 @@ function enterNaturalPhase(phase) {
   clearTimeout(natural.varyTimer);
   natural.phase = phase;
   if (phase === 'raining') {
+    pickRainSound();
     const t = pickRainTarget();
     natural.targetVol = t.vol;
     natural.targetInt = t.int;
