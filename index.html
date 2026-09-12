@@ -67,14 +67,17 @@
     <div class="channel">
       <div class="channel-head">
         <h2><span class="num">01</span> 雨声</h2>
-        <button class="chip is-on" id="rain-mute" aria-pressed="true">ON</button>
+        <span class="head-chips">
+          <button class="chip" id="rain-natural" aria-pressed="false">自然模式 OFF</button>
+          <button class="chip is-on" id="rain-mute" aria-pressed="true">ON</button>
+        </span>
       </div>
-      <label class="slider-row">
+      <label class="slider-row" id="rain-volume-row">
         <span>音量</span>
         <input id="rain-volume" type="range" min="0" max="100" value="80" />
         <b id="rain-volume-val">80</b>
       </label>
-      <label class="slider-row">
+      <label class="slider-row" id="rain-intensity-row">
         <span>雨势</span>
         <input id="rain-intensity" type="range" min="1" max="100" value="55" />
         <b id="rain-intensity-val">55</b>
@@ -110,7 +113,7 @@
 
   <footer class="foot">
     <p>RAIN &amp; LI ZHI — for code / reading / night.</p>
-    <p class="tiny">空格 播放·暂停 · M 音乐开关 · R 雨声开关 · T 亮暗切换 · 可离线安装为 PWA</p>
+    <p class="tiny">空格 播放·暂停 · M 音乐开关 · R 雨声开关 · N 自然模式 · T 亮暗切换 · 可离线安装为 PWA</p>
   </footer>
 </main>
 

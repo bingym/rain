@@ -167,6 +167,7 @@ $('next-btn')?.addEventListener('click', () => loadTrack(trackIndex + 1, isPlayi
 musicAudio.addEventListener('ended', () => loadTrack(trackIndex + 1, true));
 
 rainVol?.addEventListener('input', () => {
+  if (naturalMode) return;
   rainAudio.volume = rainVol.value / 100;
   if (rainVolVal) rainVolVal.textContent = rainVol.value;
   localStorage.setItem('rain.rainVol', String(rainAudio.volume));
@@ -177,11 +178,192 @@ musicVol?.addEventListener('input', () => {
   localStorage.setItem('rain.musicVol', String(musicAudio.volume));
 });
 
+// ---- 自然模式：系统接管雨的音量和雨势，一阵一阵 ----
+const naturalBtn = $('rain-natural');
+let naturalMode = false;
+try { naturalMode = localStorage.getItem('rain.natural') === 'true'; } catch (e) {}
+// 手动值存档：退出自然模式时恢复
+let manualRainVol = rainAudio.volume;
+let manualIntensity = Number(intensity?.value || 55);
+// 自然模式当前值（渐入/渐出就靠它们指数趋近目标）
+const natural = {
+  phase: 'raining', // 'raining' | 'dry'
+  curVol: 0, curInt: 0,
+  targetVol: 0.7, targetInt: 55,
+  tau: 3, // 趋近时间常数（秒），≈3tau 走完一次渐入/渐出
+  switchTimer: null, tickTimer: null, varyTimer: null,
+};
+
+const rand = (min, max) => min + Math.random() * (max - min);
+
+// 下雨时长：一阵一阵，也可能一直下很久（长尾分布）
+function pickRainingMs() {
+  const r = Math.random();
+  if (r < 0.15) return rand(8 * 60, 20 * 60) * 1000;   // 15%：长时间不停 8~20 分钟
+  if (r < 0.60) return rand(1.5 * 60, 5 * 60) * 1000;  // 45%：中等 1.5~5 分钟
+  return rand(25, 90) * 1000;                          // 40%：短阵雨 25~90 秒
+}
+// 停雨间隔：随机，有时很快回来，有时停很久
+function pickDryMs() {
+  const r = Math.random();
+  if (r < 0.15) return rand(5 * 60, 10 * 60) * 1000;   // 15%：长时间不下 5~10 分钟
+  return rand(15, 180) * 1000;                         // 85%：15 秒~3 分钟
+}
+// 雨势/音量目标：共用同一个雨强 s，保证两者同步（大雨=大声，小雨=小声）
+function strengthToTarget(s) {
+  s = Math.max(0, Math.min(1, s));
+  if (s <= 0.001) return { vol: 0, int: 0 };
+  return { vol: 0.35 + s * 0.55, int: 20 + s * 72 };
+}
+// 每次一阵雨都不一样：先抽雨强，再同时推导音量和雨势
+function pickRainTarget() {
+  return strengthToTarget(Math.random());
+}
+// 渐入/渐出时长：出现渐入，消失渐出
+function pickFadeSec(isRaining) {
+  return isRaining ? rand(5, 12) : rand(6, 15);
+}
+
+function renderNaturalUI() {
+  if (!naturalBtn) return;
+  naturalBtn.textContent = naturalMode ? '自然模式 ON' : '自然模式 OFF';
+  naturalBtn.classList.toggle('is-on', naturalMode);
+  naturalBtn.setAttribute('aria-pressed', String(naturalMode));
+  // 自然模式下直接隐藏音量/雨势滑块
+  const volRow = $('rain-volume-row');
+  const intRow = $('rain-intensity-row');
+  if (volRow) volRow.hidden = naturalMode;
+  if (intRow) intRow.hidden = naturalMode;
+}
+
+function applyNaturalFrame() {
+  // 输出到音频 + 画面（不写 localStorage，保留手动值；滑块已隐藏，无需更新显示）
+  rainAudio.volume = Math.max(0, Math.min(1, natural.curVol));
+  intensityValNum = Math.max(0, Math.min(100, natural.curInt));
+}
+
+function naturalTick() {
+  const dt = 0.25; // tick 间隔秒
+  const k = 1 - Math.exp(-dt / Math.max(0.5, natural.tau));
+  natural.curVol += (natural.targetVol - natural.curVol) * k;
+  natural.curInt += (natural.targetInt - natural.curInt) * k;
+  if (Math.abs(natural.targetVol - natural.curVol) < 0.002) natural.curVol = natural.targetVol;
+  if (Math.abs(natural.targetInt - natural.curInt) < 0.05) natural.curInt = natural.targetInt;
+  if (!naturalMode) return;
+  // 自然模式下只要总开关允许就保持播放（即使干期音量为 0 也保持，
+  // 这样下一阵雨渐入时无缝衔接，无需重新 play）
+  if (isPlaying && rainOn && rainAudio.paused && natural.curVol > 0.005) {
+    rainAudio.play().catch(() => {});
+  }
+  applyNaturalFrame();
+}
+
+// 雨中微变化：沿同一雨强漂移，音量和雨势始终同步变化
+function scheduleVariation() {
+  clearTimeout(natural.varyTimer);
+  if (!naturalMode || natural.phase !== 'raining') return;
+  natural.varyTimer = setTimeout(() => {
+    if (!naturalMode || natural.phase !== 'raining') return;
+    // 从当前目标反推雨强，叠加同一份随机漂移后再同步推导
+    const curS = Math.max(0, Math.min(1, (natural.targetVol - 0.35) / 0.55));
+    const t = strengthToTarget(curS + rand(-0.25, 0.25));
+    natural.targetVol = t.vol;
+    natural.targetInt = t.int;
+    natural.tau = rand(2, 4); // 漂移过渡快一点
+    scheduleVariation();
+  }, rand(10, 25) * 1000);
+}
+
+function enterNaturalPhase(phase) {
+  clearTimeout(natural.switchTimer);
+  clearTimeout(natural.varyTimer);
+  natural.phase = phase;
+  if (phase === 'raining') {
+    const t = pickRainTarget();
+    natural.targetVol = t.vol;
+    natural.targetInt = t.int;
+    natural.tau = pickFadeSec(true) / 3;
+    // 确保渐入起点能播出声音
+    if (isPlaying && rainOn && rainAudio.paused) rainAudio.play().catch(() => {});
+    natural.switchTimer = setTimeout(() => enterNaturalPhase('dry'), pickRainingMs());
+    scheduleVariation();
+  } else {
+    natural.targetVol = 0;
+    natural.targetInt = 0;
+    natural.tau = pickFadeSec(false) / 3;
+    natural.switchTimer = setTimeout(() => enterNaturalPhase('raining'), pickDryMs());
+  }
+}
+
+function startNaturalEngine() {
+  stopNaturalEngine(false);
+  // 70% 直接下，30% 先干一阵（短干，很快回来，给用户“时有时无”的感知）
+  const first = Math.random() < 0.7 ? 'raining' : 'dry';
+  if (first === 'dry') {
+    natural.curVol = manualRainVol;
+    natural.curInt = manualIntensity;
+    enterNaturalPhase('dry');
+    // 首个干期强制短一点，避免打开后长时间没声
+    clearTimeout(natural.switchTimer);
+    natural.switchTimer = setTimeout(() => enterNaturalPhase('raining'), rand(8, 30) * 1000);
+  } else {
+    natural.curVol = 0;
+    natural.curInt = 0;
+    enterNaturalPhase('raining');
+  }
+  applyNaturalFrame();
+  natural.tickTimer = setInterval(naturalTick, 250);
+}
+
+function stopNaturalEngine(clearTimers = true) {
+  if (clearTimers) {
+    clearTimeout(natural.switchTimer);
+    clearInterval(natural.tickTimer);
+    clearTimeout(natural.varyTimer);
+  } else {
+    clearTimeout(natural.switchTimer);
+    clearInterval(natural.tickTimer);
+    clearTimeout(natural.varyTimer);
+  }
+  natural.switchTimer = natural.tickTimer = natural.varyTimer = null;
+}
+
+function setNaturalMode(on) {
+  naturalMode = !!on;
+  try { localStorage.setItem('rain.natural', String(naturalMode)); } catch (e) {}
+  if (naturalMode) {
+    // 存档手动值
+    manualRainVol = Number(localStorage.getItem('rain.rainVol') ?? rainAudio.volume ?? 0.8);
+    manualIntensity = Number(intensity?.value || 55);
+    startNaturalEngine();
+  } else {
+    stopNaturalEngine();
+    // 恢复手动值
+    rainAudio.volume = Math.max(0, Math.min(1, manualRainVol));
+    intensityValNum = Math.max(1, Math.min(100, manualIntensity));
+    if (rainVol) {
+      rainVol.value = String(Math.round(rainAudio.volume * 100));
+      if (rainVolVal) rainVolVal.textContent = rainVol.value;
+    }
+    if (intensity) {
+      intensity.value = String(Math.round(intensityValNum));
+      if (intensityVal) intensityVal.textContent = intensity.value;
+    }
+    // 恢复手动播放状态
+    if (!isPlaying) { /* 保持暂停 */ }
+    else if (rainOn) rainAudio.play().catch(() => {});
+  }
+  renderNaturalUI();
+}
+
+naturalBtn?.addEventListener('click', () => setNaturalMode(!naturalMode));
+
 document.addEventListener('keydown', (e) => {
   if (e.code === 'Space' && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName || '')) {
     e.preventDefault(); setPlaying(!isPlaying);
   } else if (e.key === 'm' || e.key === 'M') { musicOn = !musicOn; syncMusic(); }
   else if (e.key === 'r' || e.key === 'R') { rainOn = !rainOn; syncRain(); }
+  else if (e.key === 'n' || e.key === 'N') { setNaturalMode(!naturalMode); }
   else if (e.key === 't' || e.key === 'T') { setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'); }
 });
 
@@ -240,14 +422,18 @@ seed();
 addEventListener('resize', seed);
 
 intensity?.addEventListener('input', () => {
+  if (naturalMode) return;
   if (intensityVal) intensityVal.textContent = intensity.value;
   intensityValNum = Number(intensity.value);
 });
 
 function frame() {
   ctx.clearRect(0, 0, W, H);
-  const density = intensityValNum / 100; // 0.01..1
-  const active = Math.floor(drops.length * (0.15 + density * 0.85));
+  const density = intensityValNum / 100; // 0..1
+  // 自然模式干期 density→0 时应完全无雨；手动模式保留 15% 保底可见
+  const active = naturalMode
+    ? Math.floor(drops.length * density)
+    : Math.floor(drops.length * (0.15 + density * 0.85));
   const isLight = document.documentElement.dataset.theme === 'light';
   // 雨势越大线越粗、越长、越不透明；light 模式额外加对比度
   ctx.lineCap = 'round';
@@ -294,3 +480,10 @@ installBtn.addEventListener('click', async () => {
 // init
 loadTrack(trackIndex, false);
 syncRain(); syncMusic(); updateMasterUI();
+// 自然模式需要在 sync 之后启动，避免被 syncRain 的 pause 干扰
+if (naturalMode) {
+  manualRainVol = Number(localStorage.getItem('rain.rainVol') ?? rainAudio.volume ?? 0.8);
+  manualIntensity = Number(document.getElementById('rain-intensity')?.value || 55);
+  startNaturalEngine();
+}
+renderNaturalUI();

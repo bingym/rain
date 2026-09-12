@@ -147,6 +147,7 @@ body::before{
   transition:background .4s ease,border-color .4s ease;
 }
 .channel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.head-chips{display:flex;gap:8px;align-items:center}
 .channel h2{font-size:15px;letter-spacing:.3em;font-weight:500}
 .channel h2 .num{color:var(--accent);margin-right:8px;font-size:12px;letter-spacing:.2em}
 .chip{border:1px solid var(--line);background:transparent;color:var(--muted);
